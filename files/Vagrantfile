@@ -1,0 +1,314 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# All Vagrant configuration is done below. The "2" in Vagrant.configure
+# configures the configuration version (we support older styles for
+# backwards compatibility). Please don't change it unless you know what
+# you're doing.
+Vagrant.configure("2") do |config|
+  config.vm.define "Astra17-etcd1" do |etcd1server|
+  etcd1server.vm.box = "/home/max/vagrant/images/astralinux17g"
+  etcd1server.vm.network :private_network,
+       :type => 'ip',
+       :libvirt__forward_mode => 'veryisolated',
+       :libvirt__dhcp_enabled => false,
+       :ip => '192.168.1.1',
+       :libvirt__netmask => '255.255.255.240',
+       :libvirt__network_name => 'vagrant-libvirt-inet1',
+       :libvirt__always_destroy => false
+  etcd1server.vm.provider "libvirt" do |lvirt|
+      lvirt.memory = "1024"
+      lvirt.cpus = "1"
+      lvirt.title = "Astra17-etcd1Server"
+      lvirt.description = "Виртуальная машина на базе дистрибутива Astra Linux. etcd1Server"
+      lvirt.management_network_name = "vagrant-libvirt-mgmt"
+      lvirt.management_network_address = "192.168.121.0/24"
+      lvirt.management_network_keep = "true"
+      lvirt.management_network_mac = "52:54:00:27:28:83"
+  end
+  etcd1server.vm.provision "shell", inline: <<-SHELL
+      brd='*************************************************************'
+      echo "$brd"
+      echo 'Set Hostname'
+      hostnamectl set-hostname etcd1server
+      echo "$brd"
+      sed -i 's/astra17/etcd1server/' /etc/hosts
+      sed -i 's/astra17/etcd1server/' /etc/hosts
+      echo '192.168.1.1 etcd1server.local etcd1server' >> /etc/hosts
+      echo '192.168.1.2 etcd2server.local etcd2server' >> /etc/hosts
+      echo '192.168.1.3 psql1server.local psql1server' >> /etc/hosts
+      echo '192.168.1.4 psql2server.local psql2server' >> /etc/hosts
+      echo '192.168.1.5 proxy1server.local proxy1server' >> /etc/hosts
+      echo '192.168.1.6 proxy2server.local proxy2server' >> /etc/hosts
+      echo '192.168.1.7 web1server.local web1server' >> /etc/hosts
+      echo "$brd"
+      echo 'Если ранее не были установлены, то установим необходимые  пакеты'
+      echo "$brd"
+      mount -o loop /home/vagrant/installation-1.7.5.9-16.10.23_16.58.iso /media/localiso/
+      export DEBIAN_FRONTEND=noninteractive
+      apt update
+      SHELL
+  end
+  config.vm.define "Astra17-etcd2" do |etcd2server|
+  etcd2server.vm.box = "/home/max/vagrant/images/astralinux17g"
+  etcd2server.vm.network :private_network,
+       :type => 'ip',
+       :libvirt__forward_mode => 'veryisolated',
+       :libvirt__dhcp_enabled => false,
+       :ip => '192.168.1.2',
+       :libvirt__netmask => '255.255.255.240',
+       :libvirt__network_name => 'vagrant-libvirt-inet1',
+       :libvirt__always_destroy => false
+  etcd2server.vm.provider "libvirt" do |lvirt|
+      lvirt.memory = "1024"
+      lvirt.cpus = "1"
+      lvirt.title = "Astra17-etcd2Server"
+      lvirt.description = "Виртуальная машина на базе дистрибутива Astra Linux. etcd2Server"
+      lvirt.management_network_name = "vagrant-libvirt-mgmt"
+      lvirt.management_network_address = "192.168.121.0/24"
+      lvirt.management_network_keep = "true"
+      lvirt.management_network_mac = "52:54:00:27:28:84"
+  end
+  etcd2server.vm.provision "shell", inline: <<-SHELL
+      brd='*************************************************************'
+      echo "$brd"
+      echo 'Set Hostname'
+      hostnamectl set-hostname etcd2server
+      echo "$brd"
+      sed -i 's/astra17/etcd2server/' /etc/hosts
+      sed -i 's/astra17/etcd2server/' /etc/hosts
+      echo '192.168.1.1 etcd1server.local etcd1server' >> /etc/hosts
+      echo '192.168.1.2 etcd22server.local etcd2server' >> /etc/hosts
+      echo '192.168.1.3 psql1server.local psql1server' >> /etc/hosts
+      echo '192.168.1.4 psql2server.local psql2server' >> /etc/hosts
+      echo '192.168.1.5 proxy1server.local proxy1server' >> /etc/hosts
+      echo '192.168.1.6 proxy2server.local proxy2server' >> /etc/hosts
+      echo '192.168.1.7 web1server.local web1server' >> /etc/hosts
+      echo "$brd"
+      echo 'Если ранее не были установлены, то установим необходимые  пакеты'
+      echo "$brd"
+      mount -o loop /home/vagrant/installation-1.7.5.9-16.10.23_16.58.iso /media/localiso/
+      export DEBIAN_FRONTEND=noninteractive
+      apt update
+      SHELL
+  end
+  config.vm.define "Astra17-psql1" do |psql1server|
+  psql1server.vm.box = "/home/max/vagrant/images/astralinux17g"
+  psql1server.vm.network :private_network,
+       :type => 'ip',
+       :libvirt__forward_mode => 'veryisolated',
+       :libvirt__dhcp_enabled => false,
+       :ip => '192.168.1.3',
+       :libvirt__netmask => '255.255.255.240',
+       :libvirt__network_name => 'vagrant-libvirt-inet1',
+       :libvirt__always_destroy => false
+  psql1server.vm.provider "libvirt" do |lvirt|
+      lvirt.memory = "1024"
+      lvirt.cpus = "1"
+      lvirt.title = "Astra17-psql1Server"
+      lvirt.description = "Виртуальная машина на базе дистрибутива Astra Linux. psql1Server"
+      lvirt.management_network_name = "vagrant-libvirt-mgmt"
+      lvirt.management_network_address = "192.168.121.0/24"
+      lvirt.management_network_keep = "true"
+      lvirt.management_network_mac = "52:54:00:27:28:85"
+  end
+  psql1server.vm.provision "file", source: "psql/patroni1.yml", destination: "~/config.yml"
+  psql1server.vm.provision "shell", inline: <<-SHELL
+      brd='*************************************************************'
+      echo "$brd"
+      echo 'Set Hostname'
+      hostnamectl set-hostname psql1server
+      echo "$brd"
+      sed -i 's/astra17/psql1server/' /etc/hosts
+      sed -i 's/astra17/psql1server/' /etc/hosts
+      echo '192.168.1.1 etcd1server.local etcd1server' >> /etc/hosts
+      echo '192.168.1.2 etcd2server.local etcd2server' >> /etc/hosts
+      echo '192.168.1.3 psql1server.local psql1server' >> /etc/hosts
+      echo '192.168.1.4 psql2server.local psql2server' >> /etc/hosts
+      echo '192.168.1.5 proxy1server.local proxy1server' >> /etc/hosts
+      echo '192.168.1.6 proxy2server.local proxy2server' >> /etc/hosts
+      echo '192.168.1.7 web1server.local web1server' >> /etc/hosts
+      echo "$brd"
+      echo 'Если ранее не были установлены, то установим необходимые  пакеты'
+      echo "$brd"
+      mount -o loop /home/vagrant/installation-1.7.5.9-16.10.23_16.58.iso /media/localiso/
+      export DEBIAN_FRONTEND=noninteractive
+      apt update
+      SHELL
+  end
+  config.vm.define "Astra17-psql2" do |psql2server|
+  psql2server.vm.box = "/home/max/vagrant/images/astralinux17g"
+  psql2server.vm.network :private_network,
+       :type => 'ip',
+       :libvirt__forward_mode => 'veryisolated',
+       :libvirt__dhcp_enabled => false,
+       :ip => '192.168.1.4',
+       :libvirt__netmask => '255.255.255.240',
+       :libvirt__network_name => 'vagrant-libvirt-inet1',
+       :libvirt__always_destroy => false
+  psql2server.vm.provider "libvirt" do |lvirt|
+      lvirt.memory = "1024"
+      lvirt.cpus = "1"
+      lvirt.title = "Astra17-psql2Server"
+      lvirt.description = "Виртуальная машина на базе дистрибутива Astra Linux. psql2Server"
+      lvirt.management_network_name = "vagrant-libvirt-mgmt"
+      lvirt.management_network_address = "192.168.121.0/24"
+      lvirt.management_network_keep = "true"
+      lvirt.management_network_mac = "52:54:00:27:28:86"
+  end
+  psql2server.vm.provision "file", source: "psql/patroni2.yml", destination: "~/config.yml"
+  psql2server.vm.provision "shell", inline: <<-SHELL
+      brd='*************************************************************'
+      echo "$brd"
+      echo 'Set Hostname'
+      hostnamectl set-hostname psql2server
+      echo "$brd"
+      sed -i 's/astra17/psql2server/' /etc/hosts
+      sed -i 's/astra17/psql2server/' /etc/hosts
+      echo '192.168.1.1 etcd1server.local etcd1server' >> /etc/hosts
+      echo '192.168.1.2 etcd2server.local etcd2server' >> /etc/hosts
+      echo '192.168.1.3 psql1server.local psql1server' >> /etc/hosts
+      echo '192.168.1.4 psql2server.local psql2server' >> /etc/hosts
+      echo '192.168.1.5 proxy1server.local proxy1server' >> /etc/hosts
+      echo '192.168.1.6 proxy2server.local proxy2server' >> /etc/hosts
+      echo '192.168.1.7 web1server.local web1server' >> /etc/hosts
+      echo "$brd"
+      echo 'Если ранее не были установлены, то установим необходимые  пакеты'
+      echo "$brd"
+      mount -o loop /home/vagrant/installation-1.7.5.9-16.10.23_16.58.iso /media/localiso/
+      export DEBIAN_FRONTEND=noninteractive
+      apt update
+      SHELL
+  end
+  config.vm.define "Astra17-proxy1" do |proxy1server|
+  proxy1server.vm.box = "/home/max/vagrant/images/astralinux17g"
+  proxy1server.vm.network :private_network,
+       :type => 'ip',
+       :libvirt__forward_mode => 'veryisolated',
+       :libvirt__dhcp_enabled => false,
+       :ip => '192.168.1.5',
+       :libvirt__netmask => '255.255.255.240',
+       :libvirt__network_name => 'vagrant-libvirt-inet1',
+       :libvirt__always_destroy => false
+  proxy1server.vm.provider "libvirt" do |lvirt|
+      lvirt.memory = "1024"
+      lvirt.cpus = "1"
+      lvirt.title = "Astra17-proxy1Server"
+      lvirt.description = "Виртуальная машина на базе дистрибутива Astra Linux. proxy1Server"
+      lvirt.management_network_name = "vagrant-libvirt-mgmt"
+      lvirt.management_network_address = "192.168.121.0/24"
+      lvirt.management_network_keep = "true"
+      lvirt.management_network_mac = "52:54:00:27:28:87"
+  end
+  proxy1server.vm.provision "file", source: "psql/haproxy.cfg", destination: "~/haproxy.cfg"
+  proxy1server.vm.provision "shell", inline: <<-SHELL
+      brd='*************************************************************'
+      echo "$brd"
+      echo 'Set Hostname'
+      hostnamectl set-hostname proxy1server
+      echo "$brd"
+      sed -i 's/astra17/proxy1server/' /etc/hosts
+      sed -i 's/astra17/proxy1server/' /etc/hosts
+      echo '192.168.1.1 etcd1server.local etcd1server' >> /etc/hosts
+      echo '192.168.1.2 etcd2server.local etcd2server' >> /etc/hosts
+      echo '192.168.1.3 psql1server.local psql1server' >> /etc/hosts
+      echo '192.168.1.4 psql2server.local psql2server' >> /etc/hosts
+      echo '192.168.1.5 proxy1server.local proxy1server' >> /etc/hosts
+      echo '192.168.1.6 proxy2server.local proxy2server' >> /etc/hosts
+      echo '192.168.1.7 web1server.local web1server' >> /etc/hosts
+      echo "$brd"
+      echo 'Если ранее не были установлены, то установим необходимые  пакеты'
+      echo "$brd"
+      mount -o loop /home/vagrant/installation-1.7.5.9-16.10.23_16.58.iso /media/localiso/
+      export DEBIAN_FRONTEND=noninteractive
+      apt update
+      SHELL
+  end
+  config.vm.define "Astra17-proxy2" do |proxy2server|
+  proxy2server.vm.box = "/home/max/vagrant/images/astralinux17g"
+  proxy2server.vm.network :private_network,
+       :type => 'ip',
+       :libvirt__forward_mode => 'veryisolated',
+       :libvirt__dhcp_enabled => false,
+       :ip => '192.168.1.6',
+       :libvirt__netmask => '255.255.255.240', 
+       :libvirt__network_name => 'vagrant-libvirt-inet1',
+       :libvirt__always_destroy => false
+  proxy2server.vm.provider "libvirt" do |lvirt|
+      lvirt.memory = "1024"
+      lvirt.cpus = "1"
+      lvirt.title = "Astra17-proxy2Server"
+      lvirt.description = "Виртуальная машина на базе дистрибутива Astra Linux. proxy2Server"
+      lvirt.management_network_name = "vagrant-libvirt-mgmt" 
+      lvirt.management_network_address = "192.168.121.0/24" 
+      lvirt.management_network_keep = "true"
+      lvirt.management_network_mac = "52:54:00:27:28:88"
+  end
+  proxy2server.vm.provision "file", source: "psql/haproxy.cfg", destination: "~/haproxy.cfg"
+  proxy2server.vm.provision "shell", inline: <<-SHELL
+      brd='*************************************************************'
+      echo "$brd"
+      echo 'Set Hostname'
+      hostnamectl set-hostname proxy2server
+      echo "$brd"
+      sed -i 's/astra17/proxy2server/' /etc/hosts
+      sed -i 's/astra17/proxy2server/' /etc/hosts
+      echo '192.168.1.1 etcd1server.local etcd1server' >> /etc/hosts
+      echo '192.168.1.2 etcd2server.local etcd2server' >> /etc/hosts
+      echo '192.168.1.3 psql1server.local psql1server' >> /etc/hosts
+      echo '192.168.1.4 psql2server.local psql2server' >> /etc/hosts
+      echo '192.168.1.5 proxy1server.local proxy1server' >> /etc/hosts
+      echo '192.168.1.6 proxy2server.local proxy2server' >> /etc/hosts
+      echo '192.168.1.7 web1server.local web1server' >> /etc/hosts
+      echo "$brd"
+      echo 'Если ранее не были установлены, то установим необходимые  пакеты'
+      echo "$brd"
+      mount -o loop /home/vagrant/installation-1.7.5.9-16.10.23_16.58.iso /media/localiso/
+      export DEBIAN_FRONTEND=noninteractive
+      apt update
+      SHELL
+  end
+  config.vm.define "Debian12-web1" do |web1server|
+  web1server.vm.box = "/home/max/vagrant/images/debian12"
+  web1server.vm.network :private_network,
+       :type => 'ip',
+       :libvirt__forward_mode => 'veryisolated',
+       :libvirt__dhcp_enabled => false,
+       :ip => '192.168.1.7',
+       :libvirt__netmask => '255.255.255.240',
+       :libvirt__network_name => 'vagrant-libvirt-inet1',
+       :libvirt__always_destroy => false
+  web1server.vm.provider "libvirt" do |lvirt|
+      lvirt.memory = "1024"
+      lvirt.cpus = "1"
+      lvirt.title = "Debian12-web1Server"
+      lvirt.description = "Виртуальная машина на базе дистрибутива Debian Linux. web1Server"
+      lvirt.management_network_name = "vagrant-libvirt-mgmt"
+      lvirt.management_network_address = "192.168.121.0/24"
+      lvirt.management_network_keep = "true"
+      lvirt.management_network_mac = "52:54:00:27:28:89"
+  end
+  web1server.vm.provision "shell", inline: <<-SHELL
+      brd='*************************************************************'
+      echo "$brd"
+      echo 'Set Hostname'
+      hostnamectl set-hostname web1server
+      echo "$brd"
+      sed -i 's/debian12/web1server/' /etc/hosts
+      sed -i 's/debian12/web1server/' /etc/hosts
+      echo '192.168.1.1 etcd1server.local etcd1server' >> /etc/hosts
+      echo '192.168.1.2 etcd2server.local etcd2server' >> /etc/hosts
+      echo '192.168.1.3 psql1server.local psql1server' >> /etc/hosts
+      echo '192.168.1.4 psql2server.local psql2server' >> /etc/hosts
+      echo '192.168.1.5 proxy1server.local proxy1server' >> /etc/hosts
+      echo '192.168.1.6 proxy2server.local proxy2server' >> /etc/hosts
+      echo '192.168.1.7 web1server.local web1server' >> /etc/hosts
+      echo "$brd"
+      echo 'Если ранее не были установлены, то установим необходимые  пакеты'
+      echo "$brd"
+      # mount -o loop /home/vagrant/installation-1.7.5.9-16.10.23_16.58.iso /media/localiso/
+      export DEBIAN_FRONTEND=noninteractive
+      apt update
+      SHELL
+  end
+end

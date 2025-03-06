@@ -1,0 +1,67 @@
+---
+- name: Iptables | Group of servers "astraservers". Install iptables package and create rules and polices
+  hosts: astraservers
+  become: true
+  tasks:
+
+    - name: Iptables. Bash. Create rules and polices
+      ansible.builtin.shell: |
+        iptables -P INPUT DROP
+        iptables -P OUTPUT DROP
+        iptables -P FORWARD DROP
+        iptables -A INPUT -i lo -j ACCEPT
+        iptables -A INPUT ! -i lo -d 127.0.0.0/8 -j REJECT
+        iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+        iptables -A OUTPUT -j ACCEPT
+        iptables -A INPUT -s 192.168.121.1 -m tcp -p tcp --dport 22 -j ACCEPT
+        iptables -A INPUT -s 192.168.1.0/28 -m tcp -p tcp -j ACCEPT
+        iptables -A INPUT -p icmp -m icmp --icmp-type 8 -j ACCEPT
+        echo '#!/bin/bash' > /etc/network/if-post-down.d/iptables
+        echo 'touch /etc/iptables.rules' >> /etc/network/if-post-down.d/iptables
+        echo 'chmod 640 /etc/iptables.rules' >> /etc/network/if-post-down.d/iptables
+        echo 'iptables-save > /etc/iptables.rules' >> /etc/network/if-post-down.d/iptables
+        echo 'exit 0' >> /etc/network/if-post-down.d/iptables
+        chmod +x /etc/network/if-post-down.d/iptables
+        echo '#!/bin/bash' > /etc/network/if-pre-up.d/iptables
+        echo 'iptables-restore < /etc/iptables.rules' >> /etc/network/if-pre-up.d/iptables
+        echo 'exit 0' >> /etc/network/if-pre-up.d/iptables
+        chmod +x /etc/network/if-pre-up.d/iptables
+      args:
+        executable: /bin/bash
+
+- name: Iptables | Group of servers "proxyserver". Create rules and polices
+  hosts: proxyserver
+  become: true
+  tasks:
+    - name: Iptables. Bash. Create rules and polices
+      ansible.builtin.shell: |
+        iptables -A INPUT -p vrrp -d 224.0.0.18 -j ACCEPT
+      args:
+        executable: /bin/bash
+
+- name: Iptables | Group of servers "webserver". Install iptables package and create rules and polices
+  hosts: webserver
+  become: true
+  tasks:
+    - name: APT. Update the repository cache and install packages "iptables" to latest version
+      ansible.builtin.apt:
+        name: iptables,iptables-persistent
+        state: present
+        update_cache: yes
+
+    - name: Iptables. Bash. Create rules and polices
+      ansible.builtin.shell: |
+        iptables -P INPUT DROP
+        iptables -P OUTPUT DROP
+        iptables -P FORWARD DROP
+        iptables -A INPUT -i lo -j ACCEPT
+        iptables -A INPUT ! -i lo -d 127.0.0.0/8 -j REJECT
+        iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+        iptables -A OUTPUT -j ACCEPT
+        iptables -A INPUT -s 192.168.121.1 -m multiport -m tcp -p tcp --dports 22,5280 -j ACCEPT
+        # iptables -A INPUT -s 192.168.121.1 -m tcp -p tcp --dport 5280 -j ACCEPT
+        iptables -A INPUT -s 192.168.1.0/28 -m tcp -p tcp -j ACCEPT
+        iptables -A INPUT -p icmp -m icmp --icmp-type 8 -j ACCEPT
+        netfilter-persistent save
+      args:
+        executable: /bin/bash
