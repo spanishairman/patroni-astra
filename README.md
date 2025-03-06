@@ -97,7 +97,7 @@ Vagrant.configure("2") do |config|
         iptables -A INPUT -p icmp -m icmp --icmp-type 8 -j ACCEPT
 ```
 
-Для серверов __Haproxy__ дополнительно откроем входящие подключения по протоколу __VRRP__:
+Для серверов __Haproxy__ дополнительно откроем входящие подключения по протоколу [VRRP](https://ru.wikipedia.org/wiki/VRRP):
 
 ```
         iptables -A INPUT -p vrrp -d 224.0.0.18 -j ACCEPT
