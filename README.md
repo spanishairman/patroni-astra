@@ -176,3 +176,42 @@ patroni --generate-config patroni.yml
 остановить и запретить автоматический запуск _Postgresql_. 
 
 ![Плейбук](/files/play/psqla/4.patroni.yml)
+
+Проверка состояния кластера после старта:
+
+```
+# patronictl -c /etc/patroni/config.yml list
++ Cluster: 11/main (7479023897398594852) ---------+----+-----------+----------------------+
+| Member      | Host        | Role    | State     | TL | Lag in MB | Tags                 |
++-------------+-------------+---------+-----------+----+-----------+----------------------+
+| psql1server | psql1server | Leader  | running   |  2 |           | clonefrom: true      |
+|             |             |         |           |    |           | failover_priority: 1 |
++-------------+-------------+---------+-----------+----+-----------+----------------------+
+| psql2server | psql2server | Replica | streaming |  2 |         0 | clonefrom: true      |
+|             |             |         |           |    |           | failover_priority: 1 |
++-------------+-------------+---------+-----------+----+-----------+----------------------+
+```
+
+##### _Haproxy_ & _Keepalived_ - отказоустойчивый кластер с единой точкой подключения к СУБД
+
+Связка _Haproxy_ и _Keepalived_ позволяет создать единую точку входа для подключения к кластеру _PostgreSQL_.
+
+Первый ![плейбук](/files/play/psqla/5.proxy.yml) для разворачивания _Haproxy_ и ![второй](/files/play/psqla/6.keepalived.yml) для _Keepalived_.
+
+Файл ![конфигурации](/files/psql/haproxy.cfg) для _Haproxy_. Загружается в домашнюю директорию пользователя 
+с помощью сценария ![Vagrantfile](/files/Vagrantfile) на серверы группы _proxyserver_, строка:
+
+```
+  proxy1server.vm.provision "file", source: "psql/haproxy.cfg", destination: "~/haproxy.cfg"
+```
+Далее, в сценарии ![плейбука](/files/play/psqla/5.proxy.yml), загруженный файл копируется в рабочую директорию:
+
+```
+    - name: Haproxy. Configure and restart
+      ansible.builtin.shell: |
+        cp haproxy.cfg /etc/haproxy/
+        systemctl restart haproxy.service
+      args:
+        executable: /bin/bash
+        chdir: /home/vagrant/
+```

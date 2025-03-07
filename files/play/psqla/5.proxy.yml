@@ -1,0 +1,19 @@
+---
+- name: Haproxy | Group of servers "proxyservers". Install "haproxy" package, configure and restart
+  hosts: proxyserver
+  become: true
+  tasks:
+
+    - name: Haproxy. APT. Update the repository cache and install packages "haproxy", "curl" to latest version
+      ansible.builtin.apt:
+        name: haproxy,curl
+        state: present
+        update_cache: yes
+
+    - name: Haproxy. Configure and restart
+      ansible.builtin.shell: |
+        cp haproxy.cfg /etc/haproxy/
+        systemctl restart haproxy.service
+      args:
+        executable: /bin/bash
+        chdir: /home/vagrant/
