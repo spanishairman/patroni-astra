@@ -127,9 +127,37 @@ Vagrant.configure("2") do |config|
   - [x] Создание базы данных и роли для клиентского приложения.
 
 > [!TIP]
-> Создание системных пользователей, соответствующих ролям в _СУБД_ и назначение им уровней доступа в MAC требуется только в Astra Linux Special Edition.
-> В случае использования любого другого дистрибутива Linux, подобных действий выполнять не потребуется.
+> Создание системных пользователей, соответствующих ролям в _СУБД_ и назначение им уровней доступа в _MAC_ требуется только в _Astra Linux Special Edition_.
+> В случае использования любого другого дистрибутива _Linux_, подобных действий выполнять не потребуется.
 
 Соответствующий ![плейбук](/files/play/psqla/2.psql.yml)
 
 ##### _Etcd_ - установка, настройка на серверах группы _etcdserver_
+
+Для установки _Etcd_ в _Astra Linux SE 1.7_ необходимо раскомментировать дополнительные репозитории программного обеспечения, это:
+
+```
+deb https://download.astralinux.ru/astra/stable/1.7_x86-64/repository-base/ 1.7_x86-64 main contrib non-free
+deb https://download.astralinux.ru/astra/stable/1.7_x86-64/repository-extended/ 1.7_x86-64 main contrib non-free
+```
+Далее обновить кеш пакетов и установить требуемые.
+
+После установки, добавить или изменить следующие параметры:
+
+```
+ETCD_LISTEN_PEER_URLS
+ETCD_LISTEN_CLIENT_URLS
+ETCD_NAME
+ETCD_HEARTBEAT_INTERVAL
+ETCD_ELECTION_TIMEOUT
+ETCD_ENABLE_V2
+ETCD_INITIAL_ADVERTISE_PEER_URLS
+ETCD_ADVERTISE_CLIENT_URLS
+ETCD_INITIAL_CLUSTER_TOKEN
+ETCD_INITIAL_CLUSTER_TOKEN
+ETCD_INITIAL_CLUSTER
+ETCD_INITIAL_CLUSTER_STATE
+```
+Запустить службы и собрать кластер.
+
+![Плейбук](/files/play/psqla/3.etcd.yml)

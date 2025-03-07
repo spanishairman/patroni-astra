@@ -1,0 +1,91 @@
+---
+- name: Etcd | Group of servers "etcdserver". Install packages "etcd" on the "etcdserver" server group
+  hosts: etcdserver
+  become: true
+  tasks:
+    - name: APT. Uncomment base repo
+      ansible.builtin.replace:
+        path: /etc/apt/sources.list
+        regexp: '^\s*#\.*(.*repository-base.*)'
+        replace: '\1'
+
+    - name: APT. Uncomment base repo
+      ansible.builtin.replace:
+        path: /etc/apt/sources.list
+        regexp: '^\s*\.*(.*repository-base.*)'
+        replace: '\1'
+
+    - name: APT. Uncomment extended repo
+      ansible.builtin.replace:
+        path: /etc/apt/sources.list
+        regexp: '^\s*#\.*(.*repository-extended.*)'
+        replace: '\1'
+
+    - name: APT. Uncomment extended repo
+      ansible.builtin.replace:
+        path: /etc/apt/sources.list
+        regexp: '^\s*\.*(.*repository-extended.*)'
+        replace: '\1'
+
+    - name: APT. Update the repository cache and install packages "etcd" to latest version
+      ansible.builtin.apt:
+        name: etcd-server,etcd-client
+        state: present
+        update_cache: yes
+
+    - name: Config. Bash. Wipe the database of Default cluster
+      ansible.builtin.shell: |
+        systemctl stop etcd.service
+        rm -rf /var/lib/etcd/default
+      args:
+        executable: /bin/bash
+
+- name: Etcd | Servers "etcd1server". Edit etcd configuration file. Create new cluster
+  hosts: etcd1server
+  become: true
+  tasks:
+    - name: Config. Bash. Edit etcd configuration file
+      ansible.builtin.shell: |
+        echo '#[Member]' >> /etc/default/etcd
+        echo 'ETCD_LISTEN_PEER_URLS="http://0.0.0.0:2380"' >> /etc/default/etcd
+        echo 'ETCD_LISTEN_CLIENT_URLS="http://0.0.0.0:2379"' >> /etc/default/etcd
+        echo "ETCD_NAME=$HOSTNAME" >> /etc/default/etcd
+        echo 'ETCD_HEARTBEAT_INTERVAL="1000"' >> /etc/default/etcd
+        echo 'ETCD_ELECTION_TIMEOUT="5000"' >> /etc/default/etcd
+        echo 'ETCD_ENABLE_V2="true"' >> /etc/default/etcd
+        echo '#[Clustering]' >> /etc/default/etcd
+        echo "ETCD_INITIAL_ADVERTISE_PEER_URLS="http://$HOSTNAME:2380""  >> /etc/default/etcd
+        echo "ETCD_ADVERTISE_CLIENT_URLS="http://$HOSTNAME:2379"" >> /etc/default/etcd
+        echo 'ETCD_INITIAL_CLUSTER_TOKEN="etcdserver"' >> /etc/default/etcd
+        echo 'ETCD_INITIAL_CLUSTER="etcd1server=http://etcd1server:2380"' >> /etc/default/etcd
+        echo 'ETCD_INITIAL_CLUSTER_STATE="new"' >> /etc/default/etcd
+        systemctl start etcd.service
+        sed -i 's/ETCD_INITIAL_CLUSTER_STATE="new"/ETCD_INITIAL_CLUSTER_STATE="existing"/' /etc/default/etcd
+        etcdctl member add etcd2server --peer-urls="http://etcd2server:2380"
+      args:
+        executable: /bin/bash
+
+- name: Etcd | Servers "etcd2server". Edit etcd configuration file. Create new cluster
+  hosts: etcd2server
+  become: true
+  tasks:
+    - name: Config. Bash. Edit etcd configuration file
+      ansible.builtin.shell: |
+        echo '#[Member]' >> /etc/default/etcd
+        echo 'ETCD_LISTEN_PEER_URLS="http://0.0.0.0:2380"' >> /etc/default/etcd
+        echo 'ETCD_LISTEN_CLIENT_URLS="http://0.0.0.0:2379"' >> /etc/default/etcd
+        echo "ETCD_NAME=$HOSTNAME" >> /etc/default/etcd
+        echo 'ETCD_HEARTBEAT_INTERVAL="1000"' >> /etc/default/etcd
+        echo 'ETCD_ELECTION_TIMEOUT="5000"' >> /etc/default/etcd
+        echo 'ETCD_ENABLE_V2="true"' >> /etc/default/etcd
+        echo '#[Clustering]' >> /etc/default/etcd
+        echo "ETCD_INITIAL_ADVERTISE_PEER_URLS="http://$HOSTNAME:2380""  >> /etc/default/etcd
+        echo "ETCD_ADVERTISE_CLIENT_URLS="http://$HOSTNAME:2379"" >> /etc/default/etcd
+        echo 'ETCD_INITIAL_CLUSTER_TOKEN="etcdserver"' >> /etc/default/etcd
+        echo 'ETCD_INITIAL_CLUSTER="etcd1server=http://etcd1server:2380,etcd2server=http://etcd2server:2380"' >> /etc/default/etcd
+        echo 'ETCD_INITIAL_CLUSTER_STATE="existing"' >> /etc/default/etcd
+        systemctl start etcd.service
+        etcdctl user add root --new-user-password="Inc0gnit0"
+      args:
+        executable: /bin/bash
+
