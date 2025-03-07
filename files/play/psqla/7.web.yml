@@ -1,0 +1,127 @@
+---
+- name: eJabberd | Group of servers "webserver". Install and configure ejabberd. Installing "ejabberd" packages on the "webserver" server group
+  hosts: webserver
+  become: true
+  tasks:
+    - name: APT. Add Backports repository into sources list
+      ansible.builtin.apt_repository:
+        repo: deb http://deb.debian.org/debian bookworm-backports main contrib non-free
+        state: present
+    - name: APT. Update the repository cache and install packages "eJabberd", "erlang-p1-pgsql", "python3-psycopg2", "acl" to latest version using default release bookworm-backport
+      ansible.builtin.apt:
+        name: ejabberd,erlang-p1-pgsql,python3-psycopg2,acl
+        state: present
+        default_release: bookworm-backports
+        update_cache: yes
+
+- name: eJabberd | Group of servers "webserver". Install and configure ejabberd. Installing "ejabberd" packages on the "webserver" server group
+  hosts: webserver
+  become: true
+  tasks:
+    - name: APT. Update the repository cache and install packages "postgresql-client" to latest version
+      ansible.builtin.apt:
+        name: postgresql-client
+        state: present
+        update_cache: yes
+
+- name: PostgreSQL | Creating tables in the database "ejabberd-domain-local" on the Master. Remote connection
+  hosts: webserver
+  tasks:
+    - name: Connect from webserver to psqlserver and run script.
+      community.postgresql.postgresql_script:
+        login_host: 192.168.1.14
+        db: ejabberd-domain-local
+        login_user: ejabberd
+        login_password: Inc0gn1t0
+        path: /usr/share/ejabberd/sql/pg.sql
+
+- name: eJabberd | Group of servers "webserver". Confgure webservers for domainname and psqlserver connect. Granting administrator account rights
+  hosts: webserver
+  become: true
+  tasks:
+    - name: Edit ejabberd.yml for domainname.
+      ansible.builtin.shell: |
+        sed -i 's/localhost/domain.local/' ejabberd.yml
+      args:
+        executable: /bin/bash
+        chdir: /etc/ejabberd/
+    - name: Edit ejabberd.yml for connection to remote db.
+      ansible.builtin.shell: |
+        echo ''  >> ejabberd.yml
+        echo '# Database settings' >> ejabberd.yml
+        echo 'host_config:' >> ejabberd.yml
+        echo '  domain.local:' >> ejabberd.yml
+        echo '    sql_type: pgsql' >> ejabberd.yml
+        echo '    sql_server: 192.168.1.14' >> ejabberd.yml
+        echo '    sql_database: ejabberd-domain-local' >> ejabberd.yml
+        echo '    sql_username: ejabberd' >> ejabberd.yml
+        echo '    sql_password: Inc0gn1t0' >> ejabberd.yml
+        echo '    auth_method:' >> ejabberd.yml
+        echo '      - sql' >> ejabberd.yml
+      args:
+        executable: /bin/bash
+        chdir: /etc/ejabberd/
+    - name: Edit ejabberd.yml for granting administrator account rights.
+      ansible.builtin.shell: |
+        echo ''  >> ejabberd.yml
+        echo '    acl:' >> ejabberd.yml
+        echo '      admin:' >> ejabberd.yml
+        echo '        user: admin@domain.local' >> ejabberd.yml
+        echo ''  >> ejabberd.yml
+        echo '    access_rules:' >> ejabberd.yml
+        echo '      configure:' >> ejabberd.yml
+        echo '        allow: admin' >> ejabberd.yml
+        systemctl restart ejabberd.service
+      args:
+        executable: /bin/bash
+        chdir: /etc/ejabberd/
+
+- name: eJabberd | webserver. Create users - administrator and regular. Configuring the e1server server certificate
+  hosts: webserver
+  become: true
+  tasks:
+    - name: Add users. Edit ejabberd.yml
+      ansible.builtin.shell: |
+        ejabberdctl register admin domain.local Inc0gn1t0
+        ejabberdctl register max domain.local P@$$w0rd
+      args:
+        executable: /bin/bash
+
+- name: eJabberd | Group of servers "webserver". Confgure Erlang. Pre-configuration for creating a cluster
+  hosts: webserver
+  become: true
+  tasks:
+    - name: Change default Erlang node. Change default nodename for use a %HOSTNAME. ejabberd@localhost -> ejabberd@hostname. Specify the acceptable range of ports
+      ansible.builtin.shell: |
+        OLDNODE=ejabberd@localhost
+        NEWNODE=ejabberd@$HOSTNAME
+        OLDFILE=/var/lib/ejabberd/oldfiles/old.backup
+        NEWFILE=/var/lib/ejabberd/new.backup
+        mkdir /var/lib/ejabberd/oldfiles
+        chown -R ejabbed:ejabberd /var/lib/ejabberd/oldfiles
+        ejabberdctl --node $OLDNODE backup $OLDFILE
+        ejabberdctl --node $OLDNODE stop
+        mv /var/lib/ejabberd/*.* /var/lib/ejabberd/oldfiles/
+        sed -i "s/#ERLANG_NODE=ejabberd@localhost/ERLANG_NODE=$NEWNODE/" /etc/default/ejabberd
+        ejabberdctl start
+        ejabberdctl mnesia_change_nodename $OLDNODE $NEWNODE $OLDFILE $NEWFILE
+        ejabberdctl install_fallback $NEWFILE
+        ejabberdctl stop
+        ejabberdctl start
+        echo 'HWSTFERDACTZHIEXBZGN' > /var/lib/ejabberd/.erlang.cookie
+      args:
+        executable: /bin/bash
+    - name: Specify the acceptable range of ports.
+      ansible.builtin.shell: |
+        sed -i "s/#FIREWALL_WINDOW=/FIREWALL_WINDOW=4200-4210/" /etc/default/ejabberd
+      args:
+        executable: /bin/bash
+    - name: Reboot after change nodename.
+      ansible.builtin.shell: |
+        pkill -9 beam.smp
+        systemctl stop epmd.service
+        sleep 5
+        systemctl start ejabberd.service
+        sleep 5
+      args:
+        executable: /bin/bash
