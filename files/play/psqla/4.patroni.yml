@@ -1,0 +1,126 @@
+---
+- name: Patroni | Group of servers "psqlserver". Install packages "patroni" on the "psqlserver" server group
+  hosts: psqlserver
+  become: true
+  tasks:
+    - name: APT. Uncomment base repo
+      ansible.builtin.replace:
+        path: /etc/apt/sources.list
+        regexp: '^\s*#\.*(.*repository-base.*)'
+        replace: '\1'
+
+    - name: APT. Uncomment base repo
+      ansible.builtin.replace:
+        path: /etc/apt/sources.list
+        regexp: '^\s*\.*(.*repository-base.*)'
+        replace: '\1'
+
+    - name: APT. Uncomment extended repo
+      ansible.builtin.replace:
+        path: /etc/apt/sources.list
+        regexp: '^\s*#\.*(.*repository-extended.*)'
+        replace: '\1'
+
+    - name: APT. Uncomment extended repo
+      ansible.builtin.replace:
+        path: /etc/apt/sources.list
+        regexp: '^\s*\.*(.*repository-extended.*)'
+        replace: '\1'
+
+    - name: APT. Update the repository cache and install packages "patroni" to latest version
+      ansible.builtin.apt:
+        name: patroni
+        state: present
+        update_cache: yes
+
+- name: Patroni | Servers group "psqlserver". Generate patroni.yml for running PostgreSQL cluster
+  hosts: psqlserver
+  become: true
+  become_user: postgres
+  tasks:
+    - name: Config. Bash. Generate patroni.yml for running PostgreSQL cluster
+      ansible.builtin.expect:
+        command: patroni --generate-config /var/lib/postgresql/patroni.yml
+        responses:
+          "Please enter the user password:": ''
+
+- name: Patroni | Servers group "psqlserver". Copy patroni.yml to patroni conf dir. Set chmod
+  hosts: psqlserver
+  become: true
+  tasks:
+    - name: Config. Bash. Copy config.yml to patroni conf dir
+      ansible.builtin.shell: |
+        cp patroni.yml /etc/patroni/config.yml
+        chmod 644 /etc/patroni/config.yml
+      args:
+        executable: /bin/bash
+        chdir: /var/lib/postgresql
+
+- name: Patroni | Server "psql1server". Edit patroni.yml in patroni conf dir.
+  hosts: psql1server
+  become: true
+  tasks:
+    - name: Config. Bash. Copy config.yml to patroni conf dir. Start service
+      ansible.builtin.shell: |
+        sed -i "/$HOSTNAME/a #MYLABEL" config.yml
+        sed -i "/#MYLABEL/a etcd:" config.yml
+        sed -i "/etcd:/a \ \ hosts: etcd1server:2379,etcd2server:2379" config.yml
+        sed -i "s/#MYLABEL//" config.yml
+        sed -i '/data_dir/a \ \ config_dir: \/etc\/postgresql\/11\/main' config.yml
+        sed -i "/restapi:/{n;s/127.0.1.1/192.168.1.3/}" config.yml
+        sed -i "/restapi:/{n;n;s/127.0.1.1/192.168.1.3/}" config.yml
+        sed -i "/replication:/{n;s/#FIXME/Inc0gn1t0/}" config.yml
+        sed -i "/replication:/{n;n;s/#FIXME/replica_role/}" config.yml
+        sed -i "/superuser:/{n;s/''/'Inc0gn1t0'/}" config.yml
+        sed -i "/superuser:/{n;n;s/postgres/'super_role'/}" config.yml
+        sed -i "s/connect_address: 127.0.1.1:5432/connect_address: $HOSTNAME:5432/" config.yml
+      args:
+        executable: /bin/bash
+        chdir: /etc/patroni
+    - name: Config. Bash. Stop Postgresql sevice. Restart patroni service.
+      ansible.builtin.shell: |
+        systemctl disable --now postgresql.service
+        systemctl start patroni.service
+        # rm -rf /var/lib/postgresql/15/main/*
+      args:
+        executable: /bin/bash
+
+    - name: Get Patroni replication status.
+      command: patronictl -c /etc/patroni/config.yml list
+      register: status
+    - debug: var=status.stdout_lines
+
+- name: Patroni | Server "psql2server". Edit patroni.yml in patroni conf dir.
+  hosts: psql2server
+  become: true
+  tasks:
+    - name: Config. Bash. Copy config.yml to patroni conf dir. Start service
+      ansible.builtin.shell: |
+        sed -i "/$HOSTNAME/a #MYLABEL" config.yml
+        sed -i "/#MYLABEL/a etcd:" config.yml
+        sed -i "/etcd:/a \ \ hosts: etcd1server:2379,etcd2server:2379" config.yml
+        sed -i "s/#MYLABEL//" config.yml
+        sed -i '/data_dir/a \ \ config_dir: \/etc\/postgresql\/11\/main' config.yml
+        sed -i "/restapi:/{n;s/127.0.1.1/192.168.1.4/}" config.yml
+        sed -i "/restapi:/{n;n;s/127.0.1.1/192.168.1.4/}" config.yml
+        sed -i "/replication:/{n;s/#FIXME/Inc0gn1t0/}" config.yml
+        sed -i "/replication:/{n;n;s/#FIXME/replica_role/}" config.yml
+        sed -i "/superuser:/{n;s/''/'Inc0gn1t0'/}" config.yml
+        sed -i "/superuser:/{n;n;s/postgres/'super_role'/}" config.yml
+        sed -i "s/connect_address: 127.0.1.1:5432/connect_address: $HOSTNAME:5432/" config.yml
+      args:
+        executable: /bin/bash
+        chdir: /etc/patroni
+
+    - name: Config. Bash. Stop Postgresql sevice. Restart patroni service.
+      ansible.builtin.shell: |
+        systemctl disable --now postgresql.service
+        systemctl start patroni.service
+        # rm -rf /var/lib/postgresql/15/main/*
+      args:
+        executable: /bin/bash
+
+    - name: Get Patroni replication status.
+      command: patronictl -c /etc/patroni/config.yml list
+      register: status
+    - debug: var=status.stdout_lines
