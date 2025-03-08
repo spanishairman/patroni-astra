@@ -142,7 +142,7 @@ deb https://download.astralinux.ru/astra/stable/1.7_x86-64/repository-extended/ 
 ```
 Далее обновить кеш пакетов и установить требуемые.
 
-После установки, добавить или изменить следующие параметры:
+После установки, в файле _/etc/default/etcd_ добавить или изменить следующие параметры:
 
 ```
 ETCD_LISTEN_PEER_URLS
