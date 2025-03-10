@@ -1,0 +1,19 @@
+[etcdserver]
+etcd1server ansible_host=192.168.121.10 ansible_port=22 ansible_private_key_file=/home/max/vagrant/.vagrant/machines/Astra17-etcd1/libvirt/private_key
+etcd2server ansible_host=192.168.121.11 ansible_port=22 ansible_private_key_file=/home/max/vagrant/.vagrant/machines/Astra17-etcd2/libvirt/private_key
+
+[psqlserver]
+psql1server ansible_host=192.168.121.12 ansible_port=22 ansible_private_key_file=/home/max/vagrant/.vagrant/machines/Astra17-psql1/libvirt/private_key
+psql2server ansible_host=192.168.121.13 ansible_port=22 ansible_private_key_file=/home/max/vagrant/.vagrant/machines/Astra17-psql2/libvirt/private_key
+
+[proxyserver]
+proxy1server ansible_host=192.168.121.14 ansible_port=22 ansible_private_key_file=/home/max/vagrant/.vagrant/machines/Astra17-proxy1/libvirt/private_key
+proxy2server ansible_host=192.168.121.15 ansible_port=22 ansible_private_key_file=/home/max/vagrant/.vagrant/machines/Astra17-proxy2/libvirt/private_key
+
+[webserver]
+web1server ansible_host=192.168.121.16 ansible_port=22 ansible_private_key_file=/home/max/vagrant/.vagrant/machines/Debian12-web1/libvirt/private_key
+
+[astraservers:children]
+etcdserver
+psqlserver
+proxyserver
